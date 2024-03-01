@@ -8,4 +8,10 @@ import {
     @IsString()
     text: string;
   }
+
+  export class DetectLang {
+    @IsDefined({ message: "text is a required field"})
+    @IsString()
+    text: string
+  }
   

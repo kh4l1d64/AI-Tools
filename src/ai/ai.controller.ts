@@ -4,7 +4,7 @@ import { FastifyFileInterceptor } from "../interceptors/file.interceptor";
 import { extname } from 'path';
 import { Request as ExpressRequest } from 'express';
 import { ConfigService } from "@nestjs/config";
-import { T2S } from "./ai.dto"
+import { DetectLang, T2S } from "./ai.dto"
 import { AiService } from "./ai.service";
 import { PrismaService } from "src/global-services/prisma.service";
 import { Cache } from 'cache-manager';
@@ -32,6 +32,7 @@ export const imageFileFilter = (
 };
 
 
+
 @Controller('ai')
 export class AiController {
     constructor(
@@ -47,11 +48,19 @@ export class AiController {
       return await this.aiToolsService.t2s(body.text)
     }
 
+    @Post('detectLanguage') 
+    async detectLanguage(@Body() body:DetectLang) {
+      return await this.aiToolsService.detectLanguage(body.text);
+    }
+
     @Post('translate')
     async translate(@Body() body: any,  @Request() request){
       let translateService;
-      if(translateService) translateService = translateService
-      else translateService = "azure"
+      if(!body.provider) {
+        translateService = "bhashini"
+      } else {
+        translateService = body.provider
+      }
       if(translateService=="azure")
       return await this.aiToolsService.translate(body.source,body.target,body.text)
       else

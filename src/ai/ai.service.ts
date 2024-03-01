@@ -31,24 +31,59 @@ export class AiService {
     }
 
     async detectLanguage(text: string): Promise<any> {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+  
+      var body = JSON.stringify({
+        modelId: this.configService.get("TEXT_LANG_DETECTION_MODEL"),
+        task: "txt-lang-detection",
+        input:[{
+          source: text?.replace("?","")?.trim()
+        }],
+        userId: null
+      });
+  
+      var requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body
+      };
+  
       try {
-        if (isMostlyEnglish(text.replace("?", "")?.trim())) {
-          return {
-            language: Language.en,
-            error: ""
+          // this.monitoringService.incrementBhashiniCount()
+          let response:any = await fetch(
+              'https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/compute',
+              requestOptions
+          )
+          response = await response.json()
+          let language: Language;
+          if(response.output && response.output.length){
+            language = response.output[0]?.langPrediction[0]?.langCode as Language
+            // this.monitoringService.incrementBhashiniSuccessCount()
+            return {
+              language: language || 'unk',
+              error: null
+            }
+          } else {
+            // this.monitoringService.incrementBhashiniFailureCount()
+            return {
+              language: 'unk',
+              error: null
+            }
           }
-        } else {
-          return {
-            language: 'hi',
-            error: ""
-          }
-        }
       } catch (error) {
-        // this.monitoringService.incrementLanguageDetectionFailureCount()
-        return {
-          language: 'unk',
-          error: ""
-        }
+          // this.monitoringService.incrementBhashiniFailureCount()
+          if(isMostlyEnglish(text?.replace("?","")?.trim())) {
+              return {
+                  language: Language.en,
+                  error: error.message
+              }
+          } else {
+              return {
+                  language: 'unk',
+                  error: error.message
+              }
+          }
       }
     }
 
@@ -461,7 +496,12 @@ export class AiService {
           text = text.replace('|', '')
           let finalResponse;
           let languageDetected = await this.detectLanguage(text)
-          languageDetected = languageDetected.language == Language.en ? "en" : "hi"
+          console.log(languageDetected)
+          if(languageDetected.language == "unk") {
+            throw new Error("This language is not supported!");
+          }  else {
+            languageDetected = languageDetected.language;
+          }
           let config = {
             "language": {
               "sourceLanguage": languageDetected
