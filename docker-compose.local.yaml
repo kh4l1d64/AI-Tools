@@ -1,0 +1,13 @@
+version: '3.6'
+services:
+  timescaledb:
+    container_name: timescaledb
+    image: postgres:15
+    restart: always
+    ports:
+      - "5555:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: timescaledb
+      POSTGRES_PASSWORD: postgrespassword
